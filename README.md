@@ -12,6 +12,9 @@ my-marp-project/
 │   └── css-showcase.md  
 ├── themes/              # カスタムテーマファイル格納先
 │   └── advanced.css
+├── marp_converter_app/  # 配布用Marp変換ミニアプリ
+│   ├── generate-ppt.py
+│   └── config.json      # 初回実行時に生成される設定ファイル
 ├── package.json         # プロジェクト設定
 └── README.md           # このファイル
 ```
