@@ -43,15 +43,27 @@ def check_node_npm():
     """Node.jsとnpmがインストールされているかチェック"""
     try:
         # Node.jsのチェック
-        node_result = subprocess.run(["node", "--version"], capture_output=True, text=True, check=True)
-        print(f"Node.js version: {node_result.stdout.strip()}")
+        print("Node.jsの確認中...")
+        node_result = subprocess.run(["node", "--version"], capture_output=True, text=True, check=False)
+        if node_result.returncode != 0:
+            print(f"Node.js check failed: {node_result.stderr}")
+            return False
+        print(f"✓ Node.js version: {node_result.stdout.strip()}")
         
         # npmのチェック
-        npm_result = subprocess.run(["npm", "--version"], capture_output=True, text=True, check=True)
-        print(f"npm version: {npm_result.stdout.strip()}")
+        print("npmの確認中...")
+        npm_result = subprocess.run(["npm", "--version"], capture_output=True, text=True, check=False)
+        if npm_result.returncode != 0:
+            print(f"npm check failed: {npm_result.stderr}")
+            return False
+        print(f"✓ npm version: {npm_result.stdout.strip()}")
         
         return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except FileNotFoundError as e:
+        print(f"Command not found: {e}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error in check_node_npm: {e}")
         return False
 
 def install_marp_cli():
