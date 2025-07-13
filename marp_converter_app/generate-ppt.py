@@ -4,8 +4,10 @@ import subprocess
 import json
 import platform
 import shutil
+import re
 from pathlib import Path
-from tkinter import Tk, filedialog, messagebox
+from tkinter import Tk, filedialog, messagebox, Toplevel, Label, Button, Text, Scrollbar, Frame
+from tkinter import ttk
 
 CONFIG_FILE = "config.json"
 
@@ -26,11 +28,118 @@ def select_file(title, filetypes):
     root.destroy()
     return file_path
 
-def show_message(title, message):
+def select_directory(title, initial_dir=None):
+    """ディレクトリ選択ダイアログ"""
     root = Tk()
     root.withdraw()  # Hide the main window
-    messagebox.showinfo(title, message)
+    if initial_dir and os.path.exists(initial_dir):
+        dir_path = filedialog.askdirectory(title=title, initialdir=initial_dir)
+    else:
+        dir_path = filedialog.askdirectory(title=title)
     root.destroy()
+    return dir_path
+
+def extract_theme_name(css_file_path):
+    """CSSファイルから@theme名を抽出する"""
+    try:
+        with open(css_file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # /* @theme theme-name */ パターンを検索
+        pattern = r'/\*\s*@theme\s+([^\s*]+)\s*\*/'
+        match = re.search(pattern, content, re.IGNORECASE)
+        
+        if match:
+            theme_name = match.group(1)
+            print(f"CSSファイルからテーマ名を取得: {theme_name}")
+            return theme_name
+        else:
+            print("CSSファイルに@theme定義が見つかりませんでした")
+            return None
+            
+    except Exception as e:
+        print(f"CSSファイルの読み込みエラー: {e}")
+        return None
+
+def show_message(title, message):
+    """スクロール可能なメッセージダイアログを表示"""
+    try:
+        # メッセージが短い場合は通常のメッセージボックスを使用
+        if len(message) < 300 and message.count('\n') < 10:
+            root = Tk()
+            root.withdraw()
+            messagebox.showinfo(title, message)
+            root.destroy()
+            return
+        
+        # 長いメッセージの場合はカスタムダイアログを使用
+        root = Tk()
+        root.withdraw()
+        
+        dialog = Toplevel(root)
+        dialog.title(title)
+        dialog.geometry("600x400")
+        dialog.resizable(True, True)
+        
+        # メインフレーム
+        main_frame = Frame(dialog)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # テキストエリアとスクロールバー
+        text_frame = Frame(main_frame)
+        text_frame.pack(fill="both", expand=True)
+        
+        text_widget = Text(text_frame, wrap="word", font=("", 10))
+        scrollbar = Scrollbar(text_frame, orient="vertical", command=text_widget.yview)
+        text_widget.configure(yscrollcommand=scrollbar.set)
+        
+        text_widget.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # メッセージを挿入
+        text_widget.insert("1.0", message)
+        text_widget.configure(state="disabled")  # 読み取り専用
+        
+        # OKボタン
+        button_frame = Frame(main_frame)
+        button_frame.pack(fill="x", pady=(10, 0))
+        
+        ok_button = Button(button_frame, text="OK", command=dialog.destroy, font=("", 10))
+        ok_button.pack()
+        
+        # ダイアログを中央に配置
+        dialog.transient(root)
+        dialog.grab_set()
+        
+        # 画面中央に配置
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+        
+        # ダイアログが閉じるまで待機
+        dialog.wait_window()
+        root.destroy()
+        
+    except Exception as e:
+        # カスタムダイアログでエラーが発生した場合は標準のメッセージボックスにフォールバック
+        print(f"カスタムダイアログエラー: {e}")
+        try:
+            root = Tk()
+            root.withdraw()
+            # 長いメッセージは切り詰める
+            if len(message) > 1000:
+                truncated_message = message[:1000] + "\n\n...(メッセージが長すぎるため切り詰められました)"
+                messagebox.showinfo(title, truncated_message)
+            else:
+                messagebox.showinfo(title, message)
+            root.destroy()
+        except Exception as fallback_error:
+            # 最後の手段：コンソールに出力
+            print(f"メッセージボックス表示エラー: {fallback_error}")
+            print(f"タイトル: {title}")
+            print(f"メッセージ: {message}")
+            print("上記メッセージを確認してください。")
 
 def ask_yes_no(title, message):
     root = Tk()
@@ -43,15 +152,27 @@ def check_node_npm():
     """Node.jsとnpmがインストールされているかチェック"""
     try:
         # Node.jsのチェック
-        node_result = subprocess.run(["node", "--version"], capture_output=True, text=True, check=True)
-        print(f"Node.js version: {node_result.stdout.strip()}")
+        print("Node.jsの確認中...")
+        node_result = subprocess.run(["node", "--version"], capture_output=True, text=True, check=False)
+        if node_result.returncode != 0:
+            print(f"Node.js check failed: {node_result.stderr}")
+            return False
+        print(f"✓ Node.js version: {node_result.stdout.strip()}")
         
         # npmのチェック
-        npm_result = subprocess.run(["npm", "--version"], capture_output=True, text=True, check=True)
-        print(f"npm version: {npm_result.stdout.strip()}")
+        print("npmの確認中...")
+        npm_result = subprocess.run(["npm", "--version"], capture_output=True, text=True, check=False)
+        if npm_result.returncode != 0:
+            print(f"npm check failed: {npm_result.stderr}")
+            return False
+        print(f"✓ npm version: {npm_result.stdout.strip()}")
         
         return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except FileNotFoundError as e:
+        print(f"Command not found: {e}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error in check_node_npm: {e}")
         return False
 
 def install_marp_cli():
@@ -112,6 +233,7 @@ if __name__ == "__main__":
     
     config = load_config()
     theme_path = config.get("theme_path")
+    output_dir_path = config.get("output_dir")
 
     # Initial theme selection or re-selection
     if not theme_path or not os.path.exists(theme_path):
@@ -134,6 +256,35 @@ if __name__ == "__main__":
                 config["theme_path"] = theme_path
                 save_config(config)
                 show_message("テーマ変更完了", f"新しいテーマファイルが設定されました:\n{theme_path}")
+
+    # 出力ディレクトリの設定
+    if not output_dir_path or not os.path.exists(output_dir_path):
+        # 初回設定時はデフォルト提案
+        project_root = Path(__file__).parent.parent
+        default_output = project_root / "output"
+        
+        if ask_yes_no("出力ディレクトリ設定", f"PPTXファイルの出力先を設定してください。\n\nデフォルトの出力先を使用しますか？\n{default_output}\n\n「いいえ」を選ぶと別のフォルダを選択できます。"):
+            output_dir_path = str(default_output)
+        else:
+            output_dir_path = select_directory("PPTXファイルの出力先フォルダを選択してください")
+            if not output_dir_path:
+                show_message("エラー", "出力ディレクトリが選択されませんでした。デフォルトを使用します。")
+                output_dir_path = str(default_output)
+        
+        config["output_dir"] = output_dir_path
+        save_config(config)
+        show_message("出力先設定完了", f"出力先が設定されました:\n{output_dir_path}")
+    else:
+        # 出力ディレクトリの変更確認
+        if ask_yes_no("出力先の変更", f"現在の出力先:\n{output_dir_path}\n\n別の出力先に変更しますか？"):
+            new_output_dir = select_directory("新しい出力先フォルダを選択してください", output_dir_path)
+            if not new_output_dir:
+                show_message("出力先変更キャンセル", "出力先の変更をキャンセルしました。現在の設定を使用します。")
+            else:
+                output_dir_path = new_output_dir
+                config["output_dir"] = output_dir_path
+                save_config(config)
+                show_message("出力先変更完了", f"新しい出力先が設定されました:\n{output_dir_path}")
 
     show_message("Markdownファイル選択", "変換したいMarkdownファイルを選択してください。")
     markdown_file_path = select_file("変換したいMarkdownファイルを選択してください", [("Markdown files", "*.md")])
@@ -162,59 +313,115 @@ if __name__ == "__main__":
     # ファイル名とパスの処理（日本語対応）
     markdown_path = Path(markdown_file_path)
     file_name = markdown_path.stem
-    output_dir = Path("output")
+    
+    # 設定された出力ディレクトリを使用
+    output_dir = Path(output_dir_path)
 
     # 出力ディレクトリを作成
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # 出力ファイルパス
     output_file = output_dir / f"{file_name}.pptx"
     
-    command = [
-        marp_command,
-        str(markdown_path),
-        "--pptx",
-        "--output",
-        str(output_file),
-        "--theme-set",
-        theme_path,
-        "--allow-local-files"
-    ]
+    # テーマファイルの存在確認
+    if not os.path.exists(theme_path):
+        show_message("エラー", f"テーマファイルが見つかりません:\n{theme_path}\n\n新しいテーマファイルを選択してください。")
+        # テーマファイルを再選択
+        new_theme_path = select_file("テーマCSSファイルを選択してください", [("CSS files", "*.css")])
+        if not new_theme_path:
+            show_message("エラー", "テーマファイルが必要です。終了します。")
+            sys.exit(1)
+        theme_path = new_theme_path
+        config["theme_path"] = theme_path
+        save_config(config)
+    
+    # CSSファイルからテーマ名を抽出
+    theme_name = extract_theme_name(theme_path)
+    
+    if theme_name:
+        # テーマ名が取得できた場合
+        command = [
+            marp_command,
+            str(markdown_path),
+            "--pptx",
+            "--output",
+            str(output_file),
+            "--theme-set",
+            str(Path(theme_path).absolute()),
+            "--theme",
+            theme_name,  # CSSから抽出したテーマ名を使用
+            "--allow-local-files",
+            "--no-config-file"  # package.jsonの設定を無視
+        ]
+    else:
+        # テーマ名が取得できない場合はファイルパスを直接指定
+        print("テーマ名が取得できないため、CSSファイルパスを直接指定します")
+        command = [
+            marp_command,
+            str(markdown_path),
+            "--pptx",
+            "--output",
+            str(output_file),
+            "--theme-set",
+            str(Path(theme_path).absolute()),
+            "--theme",
+            str(Path(theme_path).absolute()),
+            "--allow-local-files",
+            "--no-config-file"  # package.jsonの設定を無視
+        ]
 
     print(f"Generating PPTX for: {markdown_file_path}")
     print(f"Using Marp command: {marp_command}")
     print(f"Executing command: {' '.join(command)}")
 
     try:
-        # Windows環境での日本語文字化け対策
+        print("Marpコマンドを実行中...")
+        # タイムアウトを30秒に設定してハングアップを防ぐ
         if platform.system() == "Windows":
-            result = subprocess.run(command, capture_output=True, text=True, check=True, encoding='utf-8')
+            result = subprocess.run(command, capture_output=True, text=True, check=False, encoding='utf-8', timeout=30)
         else:
-            result = subprocess.run(command, capture_output=True, text=True, check=True)
+            result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=30)
         
+        print("Marpコマンドが完了しました")
+        print(f"終了コード: {result.returncode}")
         print(f"Marp stdout: {result.stdout}")
         if result.stderr:
             print(f"Marp stderr: {result.stderr}")
         
+        # エラーチェック
+        if result.returncode != 0:
+            error_message = f"Marpコマンドがエラーで終了しました (終了コード: {result.returncode})\n\n"
+            if result.stdout:
+                error_message += f"標準出力:\n{result.stdout}\n\n"
+            if result.stderr:
+                error_message += f"エラー出力:\n{result.stderr}\n\n"
+            error_message += f"実行コマンド:\n{' '.join(command)}"
+            print(f"ERROR: {error_message}")
+            sys.exit(1)
+        
+        print("出力ファイルの確認中...")
         # 出力ファイルが実際に作成されたか確認
         if output_file.exists():
-            show_message("変換完了", f"PPTXファイルが正常に生成されました:\n{output_file.absolute()}")
+            print("出力ファイルが見つかりました")
+            print(f"SUCCESS: PPTXファイルが生成されました: {output_file.absolute()}")
+            # 一時的にコンソール出力のみ
+            #show_message("変換完了", f"PPTXファイルが正常に生成されました:\n{output_file.absolute()}")
         else:
-            show_message("警告", f"コマンドは成功しましたが、出力ファイルが見つかりません:\n{output_file.absolute()}")
+            print("出力ファイルが見つかりません")
+            print(f"WARNING: 出力ファイルが見つかりません: {output_file.absolute()}")
+            #show_message("警告", f"コマンドは成功しましたが、出力ファイルが見つかりません:\n{output_file.absolute()}")
     
-    except FileNotFoundError:
-        show_message("エラー", f"'{marp_command}' コマンドが実行できませんでした。\n\nMarp CLIが正しくインストールされていることを確認してください。\n1. Node.jsをインストール: https://nodejs.org/\n2. Marp CLIをグローバルにインストール: npm install -g @marp-team/marp-cli\n3. コマンドプロンプトを再起動")
+    except subprocess.TimeoutExpired:
+        print("ERROR: Marpコマンドがタイムアウトしました (30秒)")
+        print("ERROR: コマンドの実行に時間がかかりすぎています")
         sys.exit(1)
-    except subprocess.CalledProcessError as e:
-        error_message = f"PPTX生成中にエラーが発生しました:\n\n"
-        error_message += f"終了コード: {e.returncode}\n"
-        if e.stdout:
-            error_message += f"出力: {e.stdout}\n"
-        if e.stderr:
-            error_message += f"エラー: {e.stderr}\n"
-        error_message += f"\n実行コマンド: {' '.join(command)}"
-        show_message("エラー", error_message)
+    except FileNotFoundError:
+        print(f"ERROR: '{marp_command}' コマンドが見つかりません")
+        print("ERROR: Marp CLIがインストールされていない可能性があります")
         sys.exit(1)
     except Exception as e:
-        show_message("エラー", f"予期しないエラーが発生しました:\n{str(e)}")
+        print(f"ERROR: 予期しないエラーが発生しました: {str(e)}")
+        print(f"ERROR: エラーの種類: {type(e).__name__}")
         sys.exit(1)
+    
+    print("処理が完了しました")

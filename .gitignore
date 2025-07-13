@@ -6,3 +6,4 @@ dist/
 *.tmp
 .claude
 output
+config.json
