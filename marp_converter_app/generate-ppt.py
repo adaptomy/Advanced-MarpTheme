@@ -222,7 +222,11 @@ def find_marp_command():
         found_path = shutil.which(cmd)
         if found_path:
             print(f"✓ Marpコマンドが見つかりました: {found_path}")
-            return cmd
+            # Windows環境ではフルパスを返す
+            if platform.system() == "Windows":
+                return found_path
+            else:
+                return cmd
         else:
             print(f"✗ {cmd} が見つかりません (shutil.which)")
     
@@ -269,7 +273,12 @@ def find_marp_command():
             result = subprocess.run([cmd, "--version"], capture_output=True, text=True, check=False, timeout=5)
             if result.returncode == 0:
                 print(f"✓ 直接実行でMarpコマンドが動作しました: {cmd}")
-                return cmd
+                # Windows環境ではwhichでフルパスを取得して返す
+                if platform.system() == "Windows":
+                    full_path = shutil.which(cmd)
+                    return full_path if full_path else cmd
+                else:
+                    return cmd
             else:
                 print(f"✗ {cmd} 実行エラー: {result.stderr}")
         except FileNotFoundError:
@@ -434,12 +443,21 @@ if __name__ == "__main__":
     print(f"Generating PPTX for: {markdown_file_path}")
     print(f"Using Marp command: {marp_command}")
     print(f"Executing command: {' '.join(command)}")
+    
+    # Windows環境での追加デバッグ情報
+    if platform.system() == "Windows":
+        print(f"実行前のコマンド存在確認:")
+        print(f"  shutil.which('{marp_command}'): {shutil.which(marp_command)}")
+        print(f"  os.path.exists('{marp_command}'): {os.path.exists(marp_command)}")
+        print(f"  現在の作業ディレクトリ: {os.getcwd()}")
 
     try:
         print("Marpコマンドを実行中...")
         # タイムアウトを30秒に設定してハングアップを防ぐ
         if platform.system() == "Windows":
-            result = subprocess.run(command, capture_output=True, text=True, check=False, encoding='utf-8', timeout=30)
+            # Windows環境ではshell=Trueを試してみる
+            print("Windows環境: shell=True で実行します")
+            result = subprocess.run(command, capture_output=True, text=True, check=False, encoding='utf-8', timeout=30, shell=True)
         else:
             result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=30)
         
