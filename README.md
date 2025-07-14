@@ -12,8 +12,8 @@ my-marp-project/
 │   └── css-showcase.md  
 ├── themes/              # カスタムテーマファイル格納先
 │   └── advanced.css
-├── marp_converter_app/  # 配布用Marp変換ミニアプリ
-│   ├── generate-ppt.py
+├── marp_converter_app/  # 配布用Marp変換ミニアプリ（Windows向け）
+│   ├── generate-ppt.py  # Windows環境専用のGUI変換ツール
 │   └── config.json      # 初回実行時に生成される設定ファイル
 ├── package.json         # プロジェクト設定
 └── README.md           # このファイル
@@ -40,6 +40,32 @@ my-marp-project/
 | `npm run ppt`              | PowerPoint（.pptx）形式で出力                          |
 | `npm run pdf`              | PDF形式で出力                                           |
 | `npm run preview`          | ローカルでライブプレビュー（ホットリロード対応）        |
+| `npm run ppt:win`          | Windows環境用PowerPoint出力                             |
+| `npm run web:win`          | Windows環境用HTML出力                                   |
+
+---
+
+## 🪟 Windows向けGUIツール
+
+`marp_converter_app/generate-ppt.py` は**Windows環境専用**のGUI変換ツールです。
+
+### 特徴
+- ファイル選択ダイアログで簡単操作
+- テーマの自動検出と選択
+- 出力先ディレクトリの設定
+- Marp CLIの自動インストール機能
+- 日本語対応
+
+### 動作環境
+- **Windows 10/11 専用**
+- Python 3.7以降
+- Node.js と npm がインストール済み
+
+### 使用方法
+1. `python generate-ppt.py` を実行
+2. 初回は使用するテーマCSSファイルを選択
+3. 変換したいMarkdownファイルを選択
+4. 自動でPPTXファイルが生成されます
 
 ---
 
@@ -91,5 +117,5 @@ my-marp-project/
 ---
 
 **作成日:** 2025年7月10日
-**更新日:** 2025年7月13日
+**更新日:** 2025年7月14日
 **バージョン:** 1.0.0
