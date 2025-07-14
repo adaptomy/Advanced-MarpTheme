@@ -4,11 +4,11 @@
   "description": "Useful Marp Presentation theme",
   "main": "index.js",
   "scripts": {
-    "build": "marp",
-    "web": "marp -I slides --html --output output --theme-set themes/advanced.css",
-    "ppt": "marp -I slides --pptx --output output --theme-set themes/advanced.css --allow-local-files",
-    "pdf": "marp -I slides --pdf --output output --theme-set themes/advanced.css --allow-local-files",
-    "preview": "marp -I slides --html --output output --theme-set themes/advanced.css --preview"
+    "build": "npx @marp-team/marp-cli",
+    "web": "npx @marp-team/marp-cli -I slides --html --output output --theme-set themes/advanced.css",
+    "ppt": "npx @marp-team/marp-cli -I slides --pptx --output output --theme-set themes/advanced.css --allow-local-files",
+    "pdf": "npx @marp-team/marp-cli -I slides --pdf --output output --theme-set themes/advanced.css --allow-local-files",
+    "preview": "npx @marp-team/marp-cli -I slides --html --output output --theme-set themes/advanced.css --preview"
   },
   "dependencies": {
     "markdown-it-container": "^4.0.0"
