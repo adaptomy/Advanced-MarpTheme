@@ -195,16 +195,21 @@ li ul li::before {
   content: "○";
   color: var(--theme-accent-dark);
 }
-ol li {
+ol {
+  counter-reset: list-counter;
+}
+ol > li {
   counter-increment: list-counter;
 }
-ol li::before {
+ol > li::before {
   content: counter(list-counter) ".";
   color: var(--theme-accent);
   font-weight: bold;
 }
-ol {
-  counter-reset: list-counter;
+/* ネストしたリストアイテムにはカウンターを適用しない */
+ol li ol li::before {
+  content: "○";
+  color: var(--theme-accent-dark);
 }
 
 li.task-list-item {
