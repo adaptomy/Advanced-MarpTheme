@@ -151,9 +151,17 @@ def ask_yes_no(title, message):
 def check_node_npm():
     """Node.jsとnpmがインストールされているかチェック"""
     try:
+        # Windows環境でのコマンド拡張子対応
+        if platform.system() == "Windows":
+            node_cmd = "node.exe"
+            npm_cmd = "npm.cmd"
+        else:
+            node_cmd = "node"
+            npm_cmd = "npm"
+        
         # Node.jsのチェック
         print("Node.jsの確認中...")
-        node_result = subprocess.run(["node", "--version"], capture_output=True, text=True, check=False)
+        node_result = subprocess.run([node_cmd, "--version"], capture_output=True, text=True, check=False)
         if node_result.returncode != 0:
             print(f"Node.js check failed: {node_result.stderr}")
             return False
@@ -161,7 +169,7 @@ def check_node_npm():
         
         # npmのチェック
         print("npmの確認中...")
-        npm_result = subprocess.run(["npm", "--version"], capture_output=True, text=True, check=False)
+        npm_result = subprocess.run([npm_cmd, "--version"], capture_output=True, text=True, check=False)
         if npm_result.returncode != 0:
             print(f"npm check failed: {npm_result.stderr}")
             return False
@@ -182,7 +190,7 @@ def install_marp_cli():
         
         # Marp CLIをグローバルインストール
         if platform.system() == "Windows":
-            result = subprocess.run(["npm", "install", "-g", "@marp-team/marp-cli"], 
+            result = subprocess.run(["npm.cmd", "install", "-g", "@marp-team/marp-cli"], 
                                   capture_output=True, text=True, check=True, shell=True)
         else:
             result = subprocess.run(["npm", "install", "-g", "@marp-team/marp-cli"], 

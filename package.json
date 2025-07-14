@@ -8,7 +8,12 @@
     "web": "npx @marp-team/marp-cli -I ./slides --html --output ./output",
     "ppt": "npx @marp-team/marp-cli -I ./slides --pptx --output ./output --allow-local-files",
     "pdf": "npx @marp-team/marp-cli -I ./slides --pdf --output ./output --allow-local-files",
-    "preview": "npx @marp-team/marp-cli -I ./slides --html --output ./output --preview"
+    "preview": "npx @marp-team/marp-cli -I ./slides --html --output ./output --preview",
+    "build:win": "npx @marp-team/marp-cli.cmd",
+    "web:win": "npx @marp-team/marp-cli.cmd -I ./slides --html --output ./output",
+    "ppt:win": "npx @marp-team/marp-cli.cmd -I ./slides --pptx --output ./output --allow-local-files",
+    "pdf:win": "npx @marp-team/marp-cli.cmd -I ./slides --pdf --output ./output --allow-local-files",
+    "preview:win": "npx @marp-team/marp-cli.cmd -I ./slides --html --output ./output --preview"
   },
   "dependencies": {
     "markdown-it-container": "^4.0.0"
