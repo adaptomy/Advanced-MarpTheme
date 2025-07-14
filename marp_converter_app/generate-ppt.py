@@ -201,7 +201,10 @@ def install_marp_cli():
         return True
         
     except subprocess.CalledProcessError as e:
-        error_msg = f"Marp CLIのインストールに失敗しました:\n\n{e.stderr}\n\n手動でインストールしてください:\nnpm install -g @marp-team/marp-cli"
+        if platform.system() == "Windows":
+            error_msg = f"Marp CLIのインストールに失敗しました:\n\n{e.stderr}\n\n手動でインストールしてください:\n1. コマンドプロンプトを管理者権限で開く\n2. npm.cmd install -g @marp-team/marp-cli を実行"
+        else:
+            error_msg = f"Marp CLIのインストールに失敗しました:\n\n{e.stderr}\n\n手動でインストールしてください:\nnpm install -g @marp-team/marp-cli"
         show_message("インストールエラー", error_msg)
         return False
     except Exception as e:
@@ -210,14 +213,43 @@ def install_marp_cli():
 
 def find_marp_command():
     """Marpコマンドを検出する（Windows/Mac/Linux対応）"""
+    print("Marpコマンドを検索中...")
+    print(f"現在のPATH環境変数: {os.environ.get('PATH', 'なし')}")
+    
     possible_commands = ["marp", "marp.cmd", "marp.exe"]
     
     for cmd in possible_commands:
-        if shutil.which(cmd):
+        found_path = shutil.which(cmd)
+        if found_path:
+            print(f"✓ Marpコマンドが見つかりました: {found_path}")
             return cmd
+        else:
+            print(f"✗ {cmd} が見つかりません (shutil.which)")
     
-    # グローバルインストールパスも確認
+    # Windows環境での追加検索
     if platform.system() == "Windows":
+        print("Windowsの標準インストールパスを確認中...")
+        
+        # npm root -g でグローバルパスを取得
+        try:
+            npm_cmd = "npm.cmd" if shutil.which("npm.cmd") else "npm"
+            result = subprocess.run([npm_cmd, "root", "-g"], capture_output=True, text=True, check=True)
+            npm_global_root = result.stdout.strip()
+            npm_bin_path = os.path.join(npm_global_root, ".bin")
+            print(f"npm global root: {npm_global_root}")
+            print(f"npm bin path: {npm_bin_path}")
+            
+            # npm binディレクトリ内のMarpを確認
+            for ext in [".cmd", ".exe", ""]:
+                marp_path = os.path.join(npm_bin_path, f"marp{ext}")
+                print(f"確認中: {marp_path}")
+                if os.path.exists(marp_path):
+                    print(f"✓ Marpコマンドが見つかりました: {marp_path}")
+                    return marp_path
+        except Exception as e:
+            print(f"npm rootコマンドエラー: {e}")
+        
+        # 従来の固定パス検索
         npm_global_paths = [
             os.path.expanduser("~\\AppData\\Roaming\\npm\\marp.cmd"),
             os.path.expanduser("~\\AppData\\Roaming\\npm\\marp.exe"),
@@ -225,9 +257,27 @@ def find_marp_command():
             "C:\\Program Files\\nodejs\\marp.exe"
         ]
         for path in npm_global_paths:
+            print(f"確認中: {path}")
             if os.path.exists(path):
+                print(f"✓ Marpコマンドが見つかりました: {path}")
                 return path
     
+    # 最後の手段：直接テスト実行
+    print("直接実行テストを試行中...")
+    for cmd in possible_commands:
+        try:
+            result = subprocess.run([cmd, "--version"], capture_output=True, text=True, check=False, timeout=5)
+            if result.returncode == 0:
+                print(f"✓ 直接実行でMarpコマンドが動作しました: {cmd}")
+                return cmd
+            else:
+                print(f"✗ {cmd} 実行エラー: {result.stderr}")
+        except FileNotFoundError:
+            print(f"✗ {cmd} ファイルが見つかりません")
+        except Exception as e:
+            print(f"✗ {cmd} 実行時エラー: {e}")
+    
+    print("Marpコマンドが見つかりませんでした")
     return None
 
 if __name__ == "__main__":
@@ -315,7 +365,10 @@ if __name__ == "__main__":
             else:
                 sys.exit(1)
         else:
-            show_message("エラー", "Marp CLIが必要です。\n\n手動でインストールしてください:\n1. コマンドプロンプトを開く\n2. npm install -g @marp-team/marp-cli を実行\n3. このツールを再実行")
+            if platform.system() == "Windows":
+                show_message("エラー", "Marp CLIが必要です。\n\n手動でインストールしてください:\n1. コマンドプロンプトを管理者権限で開く\n2. npm.cmd install -g @marp-team/marp-cli を実行\n3. コマンドプロンプトを再起動\n4. このツールを再実行")
+            else:
+                show_message("エラー", "Marp CLIが必要です。\n\n手動でインストールしてください:\n1. ターミナルを開く\n2. npm install -g @marp-team/marp-cli を実行\n3. このツールを再実行")
             sys.exit(1)
 
     # ファイル名とパスの処理（日本語対応）
@@ -425,7 +478,15 @@ if __name__ == "__main__":
         sys.exit(1)
     except FileNotFoundError:
         print(f"ERROR: '{marp_command}' コマンドが見つかりません")
-        print("ERROR: Marp CLIがインストールされていない可能性があります")
+        if platform.system() == "Windows":
+            print("ERROR: Windows環境でMarp CLIが正しくインストールされていない可能性があります")
+            print("解決方法:")
+            print("1. コマンドプロンプトを管理者権限で開く")
+            print("2. npm.cmd install -g @marp-team/marp-cli を実行")
+            print("3. コマンドプロンプトを再起動")
+            print("4. npm.cmd list -g @marp-team/marp-cli で確認")
+        else:
+            print("ERROR: Marp CLIがインストールされていない可能性があります")
         sys.exit(1)
     except Exception as e:
         print(f"ERROR: 予期しないエラーが発生しました: {str(e)}")
