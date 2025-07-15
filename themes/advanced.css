@@ -195,16 +195,31 @@ li ul li::before {
   content: "○";
   color: var(--theme-accent-dark);
 }
+/* 順序付きリストのスタイリング */
 ol {
-  counter-reset: list-counter;
+  /* カウンターをリセットしない - HTMLの番号付けに従う */
+  list-style: none;
 }
 ol > li {
-  counter-increment: list-counter;
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 ol > li::before {
-  content: counter(list-counter) ".";
+  position: absolute;
+  left: 0;
   color: var(--theme-accent);
   font-weight: bold;
+  /* デフォルトはカウンターを使用 */
+  content: counter(list-item) ".";
+}
+/* 明示的に数字が指定されている場合（value属性）はそれを優先 */
+ol > li[value]::before {
+  content: attr(value) ".";
+}
+/* startが指定されている場合はその値から開始 */
+ol[start] {
+  counter-reset: list-item calc(attr(start) - 1);
 }
 /* ネストしたリストアイテムにはカウンターを適用しない */
 ol li ol li::before {
