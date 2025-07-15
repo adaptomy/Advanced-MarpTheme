@@ -1,6 +1,6 @@
 ---
 marp: true
-theme: custom
+theme: advanced
 size: 4:3
 paginate: true
 ---
@@ -96,13 +96,26 @@ paginate: true
   - 別のサブ項目
 - 最後の主要項目
 
-## 番号付きリスト
+## 番号付きリスト（項番指定）
+1. 項目1
+1. 項目2
+   1. 項目2-1
+   1. 項目2-2
+1. 項目3
 
-1. 最初のステップ
-2. 次のプロセス
-3. 最終段階
-   1. サブステップA
-   2. サブステップB
+---
+
+<div class="chapter-number">03-1</div>
+
+# リストとボックス要素
+
+## 番号付きリスト（項番指定）
+
+  <ol>
+  <li value="1">項目1</li>
+  <li value="3">項目3（2をスキップ）</li>
+  <li value="7">項目7</li>
+  </ol>
 
 ---
 

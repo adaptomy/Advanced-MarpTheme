@@ -195,7 +195,9 @@ li ul li::before {
   content: "○";
   color: var(--theme-accent-dark);
 }
-/* 順序付きリストのスタイリング */
+/* ===== 順序付きリストのスタイリング ===== */
+
+/* 自動的olモード（デフォルト） */
 ol {
   list-style: none;
   counter-reset: ol-counter;
@@ -214,16 +216,12 @@ ol > li::before {
   content: counter(ol-counter) ".";
 }
 
-/* 明示的に数字が指定されている場合（value属性）はそれを優先 */
-ol > li[value] {
-  counter-increment: none;
-  counter-reset: ol-counter attr(value);
-}
+/* 明示的olモード（value属性を使用） */
 ol > li[value]::before {
   content: attr(value) ".";
 }
-ol > li[value] ~ li {
-  counter-increment: ol-counter;
+ol > li[value] {
+  counter-increment: none;
 }
 
 /* ネストしたolも正しく数字を表示 */
